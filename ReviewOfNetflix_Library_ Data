@@ -1,0 +1,221 @@
+
+import matplotlib.pyplot as plt
+fig, (ax1, ax2) = plt.subplots(1, 2)
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import math 
+
+from sklearn import linear_model
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+
+from scipy import stats
+from scipy.stats import kurtosis, skew
+
+
+####################################################################################################################
+#Modifing the imported table into a summary table, to make it easy to plot
+####################################################################################################################
+df = pd.read_csv('netflixMod.csv')
+df['Count'] = list(range(df['Month'].size))
+
+
+df1 = pd.DataFrame(df.groupby("Year")["tot_load"].sum())
+df2 = pd.DataFrame(df.groupby("Year")["tot_cost"].sum())
+df3 = pd.DataFrame(df.groupby(("Year")))
+df4 = pd.DataFrame(df.groupby("Year")["type"].count())
+df6 = pd.DataFrame(df.groupby("Year")["runtime"].sum())
+
+df1['Load'] = df1['tot_load'].cumsum()/10
+df1['Cost'] = df2['tot_cost'].cumsum()
+df1['Year']= df.Year.unique()
+df1['Subs'] = df.Subscribers.unique()
+df1['Content_count'] = df4['type'].cumsum()
+df1['Library_length'] = df6['runtime'].cumsum()
+
+df1['Cost_Growth'] = round(df1['Cost'].pct_change(), 2)
+df1['Load_Growth'] = round(df1['Load'].pct_change(), 2)
+df1['Sub_Growth'] = round(df1['Subs'].pct_change(), 2)
+
+print(df1.corr())
+print(df1)
+
+
+
+####################################################################################################################
+#GRAPHS Estimated Costs & Storage Size Vs Time 
+####################################################################################################################
+ax1.plot(df1['Year'], df1['Cost'], 'o-')
+ax1.plot(df1['Year'], df1['Load'], '.-')
+plt.xlabel('Year')
+plt.ylabel('Cost in $, Storage Load in * 10Gb')
+plt.title('Netflix and Cost and Storage Trend from 2011 - 2021')
+
+
+
+runtime = ax2.bar(df1['Year'], df1['Subs'])
+
+plt.xlabel('Year')
+plt.ylabel('Subscribers in Millions')
+plt.title('Subscriber Base Growth Trend from 2011 - 2021')
+
+
+
+fig = plt.figure()
+plt.rcParams['figure.figsize'] = [11, 7]
+plt.show()
+
+
+
+####################################################################################################################
+#Modifing the imported table into a summary table, to make it easy to plot
+##################################
+
+import matplotlib.pyplot as plt
+fig, ax3 = plt.subplots()
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+import math 
+
+
+costtrend = ax3.plot(df1['Year'], df1['Cost_Growth'], 'o-')
+loadtrend = ax3.plot(df1['Year'], df1['Load_Growth'], '.-')
+subtrend = ax3.plot(df1['Year'], df1['Sub_Growth'], '*-')
+
+
+
+
+plt.xlabel('Year')
+plt.ylabel('%Growth Yr-On-Yr')
+plt.title('Sub, Cost and Storage Trend from 2011 - 2021')
+plt.rcParams['figure.figsize'] = [11, 7]
+
+
+
+fig = plt.figure()
+plt.rcParams['figure.figsize'] = [11, 7]
+plt.show()
+
+
+
+
+import matplotlib.pyplot as plt
+fig, ax4 = plt.subplots()
+import pandas as pd
+
+#Extracting count of the different categories
+##########################################################
+cat_count = df.Category.value_counts()
+
+cat_count_df = cat_count.to_frame()
+cat_count_df['Genre'] = cat_count.index
+category_sum = cat_count_df['Category'].sum()
+############################################################################################################
+#modifing column to include percentages ie genre as percentage of library the 
+cat_count_df['Per_Library'] = cat_count_df['Category']/category_sum
+############################################################################################################
+#Grouping genres that constitute less than 1% as OTHERS
+lib_above1 = cat_count_df[cat_count_df['Per_Library'] > 0.01]
+lib_below1 = cat_count_df[cat_count_df['Per_Library'] < 0.01].sum()
+#Adding the Others to the Summary columns
+pie_lab  = list(lib_above1['Genre'])
+pie_lab.append('Others')
+pie_data = list(lib_above1['Per_Library'])
+pie_data.append(lib_below1.Per_Library)
+
+############################################################################################################
+#Building Pie chart
+
+ax4.pie(pie_data, labels=pie_lab, normalize=False)
+plt.title('Content Library Split by Genre Percentages')
+plt.rcParams['figure.figsize'] = [11, 7]
+
+
+fig, ax5 = plt.subplots()
+ 
+
+
+costtrend = ax5.plot(df1['Year'], df1['Content_count'], 'o-')
+
+
+
+
+plt.xlabel('Year')
+plt.ylabel('Cumulative Count Yr-On-Yr')
+plt.title('Content Library Growth Trend from 2011 - 2021')
+plt.rcParams['figure.figsize'] = [11, 7]
+
+
+#####################################################################################################################
+#Building a Linear Model, using the only independent variable Subscriber Bae
+###################################################################################################################
+subscribers = pd.DataFrame(df1['Subs'])
+monthly_cost = pd.DataFrame(df1['Cost'])
+print(monthly_cost.shape)
+lm = linear_model.LinearRegression()
+model = lm.fit(subscribers, monthly_cost)
+
+
+model.coef_
+
+
+model.intercept_
+
+model.score(subscribers, monthly_cost)
+
+
+x = pd.DataFrame([300,350,400,500])
+cost_pred = model.predict(x)
+cost_pred
+
+
+####################################################################################################################
+#GRAPHS Subscriber Base Growth Trend Over Time 
+####################################################################################################################
+import panel as pn
+import matplotlib.pyplot as plt
+fig, ax2 = plt.subplots()
+
+
+sub_series = pd.Series(df1['Subs'])
+v = round(sub_series.pct_change(), 2)
+
+
+ax2 = ax1.twinx()
+ax2.bar(df1['Year'], v)
+
+
+
+plt.xlabel('Year')
+plt.ylabel('Subscribers in Millions')
+plt.title('Subscriber Base Growth Trend from 2011 - 2021')
+
+plt.rcParams['figure.figsize'] = [11, 7]
+
+plt.figure()
+plt.show()
+
+
+df14 = df[['Year', 'Category']]
+
+           
+df15 = []
+df15 = pd.DataFrame(df14[(df14.Year == 2011) & (df14.Category == 'Dramas')])
+
+s = df14.Year.unique()
+vu = df14.Category.unique()
+
+for c in s:
+    = []
+    for a in vu:
+        df17.append((df14[(df14.Year == c) & (df14.Category == a)]))
+    print(df17)
+
+
+
+dfs.groupby('Year')
+
+
+
+print(d['Year'] == 2019)
